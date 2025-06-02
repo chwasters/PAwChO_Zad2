@@ -1,0 +1,6 @@
+dc729ac08019bcab6393723fb8293bcd
+
+dockerbuild:
+
+dockerrun:
+docker run -d -p 5000:5000 -e WEATHER_API_KEY=dc729ac08019bcab6393723fb8293bcd --name pogoda bartlomiej_niezbecki/aplikacja-pogodowa

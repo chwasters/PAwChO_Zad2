@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aplikacja Pogodowa</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #74ebd5, #ACB6E5);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    
+        .container {
+            background-color: #ffffffd9;
+            border-radius: 15px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    
+        label {
+            font-weight: bold;
+            display: block;
+            margin: 15px 0 5px;
+        }
+    
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+    
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+    
+        button:hover {
+            background-color: #0056b3;
+        }
+    
+        #wyniki {
+            margin-top: 30px;
+            display: none;
+        }
+    
+        .weather-info h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+    
+        .info-box {
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+    
+        .info-box p {
+            margin: 5px 0;
+            font-size: 1rem;
+        }
+    </style>   
+</head>
+<body>
+    <div class="container">
+        <h1>Aplikacja Pogodynka</h1>
+        
+        <form id="pogodaForm">
+            <div>
+                <label for="kraj">Wybierz kraj:</label>
+                <select id="kraj" name="kraj" required>
+                    <option value="">-- Wybierz kraj --</option>
+                    {% for kraj in kraje_miasta %}
+                    <option value="{{ kraj }}">{{ kraj }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="miasto">Wybierz miasto:</label>
+                <select id="miasto" name="miasto" required disabled>
+                    <option value="">-- Najpierw wybierz kraj --</option>
+                </select>
+            </div>
+            
+            <button type="submit">Sprawdź pogodę</button>
+        </form>
+        
+        <div id="wyniki">
+            <h2>Pogoda dla: <span id="miejscowosc"></span></h2>
+            
+            <div class="weather-info">
+                <div>
+                    <h3 id="opis-pogody"></h3>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>Temperatura:</strong> <span id="temperatura"></span>°C</p>
+                <p><strong>Temperatura odczuwalna:</strong> <span id="temp-odczuwalna"></span>°C</p>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>Wilgotność:</strong> <span id="wilgotnosc"></span>%</p>
+                <p><strong>Ciśnienie:</strong> <span id="cisnienie"></span> hPa</p>
+                <p><strong>Prędkość wiatru:</strong> <span id="wiatr"></span> m/s</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const krajSelect = document.getElementById('kraj');
+            const miastoSelect = document.getElementById('miasto');
+            const form = document.getElementById('pogodaForm');
+            const wyniki = document.getElementById('wyniki');
+            
+            const krajeMiasta = JSON.parse('{{ kraje_miasta|tojson|safe }}');
+            
+            // Aktualizacja listy miast po wyborze kraju
+            krajSelect.addEventListener('change', function() {
+                const wybranyKraj = this.value;
+                miastoSelect.innerHTML = '';
+                
+                if (wybranyKraj) {
+                    miastoSelect.disabled = false;
+                    
+                    // opcja domyslna
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Wybierz miasto --';
+                    miastoSelect.appendChild(defaultOption);
+                    
+                    const miasta = krajeMiasta[wybranyKraj];
+                    miasta.forEach(miasto => {
+                        const option = document.createElement('option');
+                        option.value = miasto;
+                        option.textContent = miasto;
+                        miastoSelect.appendChild(option);
+                    });
+                } else {
+                    miastoSelect.disabled = true;
+                    miastoSelect.innerHTML = '<option value="">-- Najpierw wybierz kraj --</option>';
+                }
+            });
+            
+            // formularz
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const miasto = miastoSelect.value;
+                if (!miasto) {
+                    alert('Proszę wybrać miasto');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('miasto', miasto);
+                
+                fetch('/pogoda', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Błąd pobierania danych');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('miejscowosc').textContent = data.miasto;
+                    document.getElementById('temperatura').textContent = data.temperatura;
+                    document.getElementById('temp-odczuwalna').textContent = data.odczuwalna;
+                    document.getElementById('wilgotnosc').textContent = data.wilgotność;
+                    document.getElementById('cisnienie').textContent = data.ciśnienie;
+                    document.getElementById('wiatr').textContent = data.wiatr;
+                    document.getElementById('opis-pogody').textContent = data.opis;
+                    
+                    wyniki.style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Wystąpił błąd: ' + error.message);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

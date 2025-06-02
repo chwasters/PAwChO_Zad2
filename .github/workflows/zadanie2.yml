@@ -50,6 +50,7 @@ jobs:
       - name: Docker Scout Scan
         uses: docker/scout-action@v1.0.9
         with:
+          command: cves
           image: docker.io/${{ secrets.DOCKER_USERNAME }}/zadanie2chmura:latest
           sarif-file: scout-report.sarif
           only-severities: critical,high

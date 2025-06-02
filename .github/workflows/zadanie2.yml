@@ -48,7 +48,7 @@ jobs:
           cache-to: type=registry,ref=docker.io/${{ secrets.DOCKER_USERNAME }}/cache:latest,mode=max
 
       - name: Docker Scout Scan
-        uses: docker/scout-action@1.0.9
+        uses: docker/scout-action@v1.0.9
         with:
           image: docker.io/${{ secrets.DOCKER_USERNAME }}/zadanie2chmura:latest
           sarif-file: scout-report.sarif
